@@ -69,15 +69,28 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    events: Event;
+    expenses: Expense;
+    incomes: Income;
+    people: Person;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    events: {
+      income: 'incomes';
+      expense: 'expenses';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    events: EventsSelect<false> | EventsSelect<true>;
+    expenses: ExpensesSelect<false> | ExpensesSelect<true>;
+    incomes: IncomesSelect<false> | IncomesSelect<true>;
+    people: PeopleSelect<false> | PeopleSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -163,6 +176,84 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  typeHandle: 'sectionEvent';
+  slug: string;
+  entryStatus: 'disabled' | 'live';
+  eventTitle?: string | null;
+  eventConfirmation: 'tbc' | 'confirmed';
+  eventType?: ('internal' | 'publicFree' | 'publicTicketing') | null;
+  title: string;
+  date?: string | null;
+  time?: string | null;
+  income?: {
+    docs?: (number | Income)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  expense?: {
+    docs?: (number | Expense)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "incomes".
+ */
+export interface Income {
+  id: number;
+  typeHandle: 'sectionIncome';
+  slug: string;
+  entryStatus: 'disabled' | 'live';
+  title: string;
+  date?: string | null;
+  incomeType?: ('event' | 'merchandise') | null;
+  related?: (number | null) | Event;
+  income?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expenses".
+ */
+export interface Expense {
+  id: number;
+  typeHandle: 'sectionExpense';
+  slug: string;
+  entryStatus: 'disabled' | 'live';
+  title: string;
+  date?: string | null;
+  expenseType?: ('crew' | 'etc') | null;
+  event?: (number | null) | Event;
+  crew?: (number | null) | Person;
+  crewRole?: ('soundEngineer' | 'documentation') | null;
+  customExpense?: string | null;
+  expense?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "people".
+ */
+export interface Person {
+  id: number;
+  typeHandle: 'sectionPeople';
+  slug: string;
+  entryStatus: 'disabled' | 'live';
+  title: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -192,6 +283,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'events';
+        value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'expenses';
+        value: number | Expense;
+      } | null)
+    | ({
+        relationTo: 'incomes';
+        value: number | Income;
+      } | null)
+    | ({
+        relationTo: 'people';
+        value: number | Person;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -274,6 +381,72 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  typeHandle?: T;
+  slug?: T;
+  entryStatus?: T;
+  eventTitle?: T;
+  eventConfirmation?: T;
+  eventType?: T;
+  title?: T;
+  date?: T;
+  time?: T;
+  income?: T;
+  expense?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expenses_select".
+ */
+export interface ExpensesSelect<T extends boolean = true> {
+  typeHandle?: T;
+  slug?: T;
+  entryStatus?: T;
+  title?: T;
+  date?: T;
+  expenseType?: T;
+  event?: T;
+  crew?: T;
+  crewRole?: T;
+  customExpense?: T;
+  expense?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "incomes_select".
+ */
+export interface IncomesSelect<T extends boolean = true> {
+  typeHandle?: T;
+  slug?: T;
+  entryStatus?: T;
+  title?: T;
+  date?: T;
+  incomeType?: T;
+  related?: T;
+  income?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "people_select".
+ */
+export interface PeopleSelect<T extends boolean = true> {
+  typeHandle?: T;
+  slug?: T;
+  entryStatus?: T;
+  title?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
