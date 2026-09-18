@@ -1,1 +1,1 @@
-export type ArrayStringTypes = string[] | string;
+export type ArrayStringProps = string[] | string;

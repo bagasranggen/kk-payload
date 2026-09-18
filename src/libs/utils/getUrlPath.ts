@@ -1,6 +1,6 @@
 import slugify from 'slugify';
 
-import { ArrayStringTypes } from '@/libs/types';
+import { ArrayStringProps } from '@/libs/types';
 import { joinArrayString } from './joinArrayString';
 
 import { FieldHookArgs, TypeWithID } from 'payload';
@@ -32,7 +32,7 @@ export const getUrlPath = async ({
     if (siblingData?.slug) slug = siblingData.slug;
     if (slug) slug = slugify(slug, { lower: true });
 
-    let url: ArrayStringTypes = [];
+    let url: ArrayStringProps = [];
     if (BASE_URI && withBaseUri) url.push(BASE_URI);
     if (path) url.push(...path);
     if (withSlug(siblingData) && slug) url.push(slug);
