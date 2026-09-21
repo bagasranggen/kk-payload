@@ -18,6 +18,58 @@ export const Incomes: CollectionConfig = {
         group: 'Cash Flow',
         useAsTitle: 'title',
     },
+    hooks: {
+        afterChange: [
+            async ({ data, req }) => {
+                console.log('hook run');
+                console.log({ data });
+
+                // if (req.context.triggeringRelatedUpdate) {
+                //     return data;
+                // }
+                //
+                // req.context.triggeringRelatedUpdate = true;
+
+                if (data?.related) {
+                    try {
+                        const totalIncome = await req.payload.find({
+                            collection: 'incomes',
+                            select: { income: true },
+                            where: {
+                                slug: { not_equals: data?.slug },
+                                related: { equals: data?.related },
+                            },
+                        });
+
+                        const updateIncome = totalIncome?.docs.reduce(
+                            (accumulator, currentValue) => accumulator + (currentValue?.income ?? 0),
+                            data?.income ?? 0
+                            // 0
+                        );
+
+                        // console.log({ data, total: totalIncome?.docs, updateIncome });
+
+                        console.log({ total: totalIncome?.docs, updateIncome });
+
+                        await req.payload.update({
+                            collection: 'events',
+                            id: data?.related,
+                            data: {
+                                // updatedAt: new Date().toISOString(),
+                                totalIncome: updateIncome,
+                                // status: 'synced_with_parent',
+                            },
+                            req, // CRITICAL: Keeps the operation inside the same database transaction
+                        });
+
+                        window.location.reload();
+                    } catch {}
+                }
+
+                return data;
+            },
+        ],
+    },
     fields: BaseEntry({
         typeHandle: [{ value: 'sectionIncome', label: 'Income' }],
         url: {

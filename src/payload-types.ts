@@ -80,8 +80,8 @@ export interface Config {
   };
   collectionsJoins: {
     events: {
-      income: 'incomes';
-      expense: 'expenses';
+      incomes: 'incomes';
+      expenses: 'expenses';
     };
   };
   collectionsSelect: {
@@ -180,26 +180,27 @@ export interface Media {
  */
 export interface Event {
   id: number;
+  updatedAt: string;
   typeHandle: 'sectionEvent';
   slug: string;
   entryStatus: 'disabled' | 'live';
   eventTitle?: string | null;
   eventConfirmation: 'tbc' | 'confirmed';
   eventType?: ('internal' | 'publicFree' | 'publicTicketing') | null;
+  totalIncome?: number | null;
   title: string;
   date?: string | null;
   time?: string | null;
-  income?: {
+  incomes?: {
     docs?: (number | Income)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  expense?: {
+  expenses?: {
     docs?: (number | Expense)[];
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  updatedAt: string;
   createdAt: string;
 }
 /**
@@ -387,18 +388,19 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "events_select".
  */
 export interface EventsSelect<T extends boolean = true> {
+  updatedAt?: T;
   typeHandle?: T;
   slug?: T;
   entryStatus?: T;
   eventTitle?: T;
   eventConfirmation?: T;
   eventType?: T;
+  totalIncome?: T;
   title?: T;
   date?: T;
   time?: T;
-  income?: T;
-  expense?: T;
-  updatedAt?: T;
+  incomes?: T;
+  expenses?: T;
   createdAt?: T;
 }
 /**

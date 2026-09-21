@@ -7,10 +7,32 @@ export const Events: CollectionConfig = {
         // group: 'Taxonomies',
         useAsTitle: 'eventTitle',
     },
+    // hooks: {
+    //     beforeChange: [
+    //         async ({ data, req: { payload } }) => {
+    //             console.log({ incomes: data?.incomes?.docs });
+    //
+    //             // try {
+    //             //     const incomes = await payload.find({
+    //             //         collection: 'incomes',
+    //             //         select: { income: true },
+    //             //         where: {
+    //             //             id: { in: data?.incomes?.docs },
+    //             //         },
+    //             //     });
+    //             //
+    //             //     console.log({ awaitIncomes: incomes?.docs });
+    //             // } catch (e) {
+    //             //     console.log(e);
+    //             // }
+    //         },
+    //     ],
+    // },
     fields: BaseEntry({
         typeHandle: [{ value: 'sectionEvent', label: 'Event' }],
         url: { enabled: false },
         sidebar: {
+            updateAt: { enabled: true },
             fields: [
                 {
                     type: 'text',
@@ -72,9 +94,49 @@ export const Events: CollectionConfig = {
                         },
                     ],
                 },
+                {
+                    type: 'number',
+                    name: 'totalIncome',
+                    admin: {
+                        readOnly: true,
+                    },
+                    hooks: {
+                        afterChange: [
+                            async ({ siblingData, req: { payload, context } }) => {
+                                // let data = 0;
+                                //
+                                console.log('run');
+                                console.log({ siblingData, context });
+
+                                try {
+                                    const incomes = await payload.find({
+                                        collection: 'incomes',
+                                        select: { income: true },
+                                        where: {
+                                            id: { in: siblingData?.incomes?.docs },
+                                        },
+                                    });
+
+                                    const totalIncome = incomes?.docs.reduce(
+                                        (accumulator, currentValue) => accumulator + (currentValue?.income ?? 0),
+                                        0
+                                    );
+
+                                    // console.log({ totalIncome });
+
+                                    // if (totalIncome > 0) data = totalIncome;
+                                    console.log({ totalIncome, awaitIncomes: incomes?.docs });
+
+                                    // console.log({ awaitIncomes: incomes?.docs });
+                                } catch {}
+                                // return data;
+                            },
+                        ],
+                    },
+                },
             ],
             slug: {
-                beforeChange: (siblingData) => {
+                beforeChange: ({ siblingData }) => {
                     let data = '';
 
                     let date = siblingData?.date ?? '';
@@ -142,7 +204,7 @@ export const Events: CollectionConfig = {
                 fields: [
                     {
                         type: 'join',
-                        name: 'income',
+                        name: 'incomes',
                         label: false,
                         collection: 'incomes',
                         on: 'related',
@@ -157,13 +219,22 @@ export const Events: CollectionConfig = {
                 fields: [
                     {
                         type: 'join',
-                        name: 'expense',
+                        name: 'expenses',
                         label: false,
                         collection: 'expenses',
                         on: 'event',
                         admin: {
                             defaultColumns: ['expenseType', 'title', 'expense'],
                         },
+                        // hooks: {
+                        //     beforeChange: [
+                        //         ({ siblingData }) => {
+                        //             console.log('run join');
+                        //
+                        //             siblingData.totalIncome = 5;
+                        //         },
+                        //     ],
+                        // },
                     },
                 ],
             },
