@@ -49,6 +49,16 @@ const getExpenseTitle = async ({ siblingData, req: { payload } }: ParametersProp
         if (siblingData?.customExpense) data.push(siblingData?.customExpense);
     }
 
+    if (siblingData?.date) {
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+
+        data.push(formatter.format(new Date(siblingData.date)));
+    }
+
     return joinArrayString(data, ' - ');
 };
 
@@ -57,6 +67,42 @@ export const Expenses: CollectionConfig = {
     admin: {
         group: 'Cash Flow',
         useAsTitle: 'title',
+    },
+    hooks: {
+        afterChange: [
+            async ({ data, req }) => {
+                req.context.triggeringRelatedUpdate = true;
+
+                if (data?.event) {
+                    try {
+                        const totalExpense = await req.payload.find({
+                            collection: 'expenses',
+                            select: { expense: true },
+                            where: {
+                                slug: { not_equals: data?.slug },
+                                related: { equals: data?.event },
+                            },
+                        });
+
+                        const updateExpense = totalExpense?.docs.reduce(
+                            (accumulator, currentValue) => accumulator + (currentValue?.expense ?? 0),
+                            data?.expense ?? 0
+                        );
+
+                        await req.payload.update({
+                            collection: 'events',
+                            id: data?.event,
+                            data: {
+                                totalExpense: updateExpense,
+                            },
+                            req, // CRITICAL: Keeps the operation inside the same database transaction
+                        });
+                    } catch {}
+                }
+
+                return data;
+            },
+        ],
     },
     fields: BaseEntry({
         typeHandle: [{ value: 'sectionExpense', label: 'Expense' }],

@@ -1,5 +1,7 @@
-import { CollectionConfig, Option } from 'payload';
+import { CollectionConfig, FieldHook, Option } from 'payload';
 import { BaseEntry } from '@/shared';
+import { ArrayStringProps, ParametersProps } from '@/libs/types';
+import { joinArrayString } from '@/libs/utils';
 
 export const INCOME_TYPE_OPTIONS: Exclude<Option, string>[] = [
     {
@@ -12,6 +14,43 @@ export const INCOME_TYPE_OPTIONS: Exclude<Option, string>[] = [
     },
 ];
 
+export const getIncomeTitle = async ({ siblingData, req: { payload } }: ParametersProps<FieldHook>) => {
+    let data: ArrayStringProps = [];
+
+    if (siblingData?.incomeType) {
+        const tmp = INCOME_TYPE_OPTIONS?.find((item) => item.value === siblingData.incomeType);
+
+        if (tmp?.label && typeof tmp.label === 'string') data.push(tmp.label);
+    }
+
+    if (siblingData?.incomeDetail) data.push(siblingData.incomeDetail);
+
+    if (siblingData?.incomeType === 'event' && siblingData?.event) {
+        try {
+            const event = await payload.findByID({
+                collection: 'events',
+                id: siblingData?.event,
+            });
+
+            if (event?.eventTitle) data.push(event.eventTitle);
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    if (siblingData?.date) {
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+
+        data.push(formatter.format(new Date(siblingData.date)));
+    }
+
+    return joinArrayString(data, ' - ');
+};
+
 export const Incomes: CollectionConfig = {
     slug: 'incomes',
     admin: {
@@ -21,48 +60,32 @@ export const Incomes: CollectionConfig = {
     hooks: {
         afterChange: [
             async ({ data, req }) => {
-                console.log('hook run');
-                console.log({ data });
+                req.context.triggeringRelatedUpdate = true;
 
-                // if (req.context.triggeringRelatedUpdate) {
-                //     return data;
-                // }
-                //
-                // req.context.triggeringRelatedUpdate = true;
-
-                if (data?.related) {
+                if (data?.event) {
                     try {
                         const totalIncome = await req.payload.find({
                             collection: 'incomes',
                             select: { income: true },
                             where: {
                                 slug: { not_equals: data?.slug },
-                                related: { equals: data?.related },
+                                related: { equals: data?.event },
                             },
                         });
 
                         const updateIncome = totalIncome?.docs.reduce(
                             (accumulator, currentValue) => accumulator + (currentValue?.income ?? 0),
                             data?.income ?? 0
-                            // 0
                         );
-
-                        // console.log({ data, total: totalIncome?.docs, updateIncome });
-
-                        console.log({ total: totalIncome?.docs, updateIncome });
 
                         await req.payload.update({
                             collection: 'events',
-                            id: data?.related,
+                            id: data?.event,
                             data: {
-                                // updatedAt: new Date().toISOString(),
                                 totalIncome: updateIncome,
-                                // status: 'synced_with_parent',
                             },
                             req, // CRITICAL: Keeps the operation inside the same database transaction
                         });
-
-                        window.location.reload();
                     } catch {}
                 }
 
@@ -81,29 +104,16 @@ export const Incomes: CollectionConfig = {
                     readOnly: true,
                 },
                 hooks: {
-                    beforeChange: [
-                        async ({ siblingData, req: { payload } }) => {
-                            let data = '';
-
-                            if (siblingData?.incomeType) {
-                                const tmp = INCOME_TYPE_OPTIONS?.find((item) => item.value === siblingData.incomeType);
-
-                                if (tmp?.label && typeof tmp.label === 'string') data = tmp.label;
-                            }
-
-                            try {
-                                const related = await payload.findByID({
-                                    collection: 'events',
-                                    id: siblingData?.related,
-                                });
-
-                                if (related?.eventTitle) data += ` - ${related.eventTitle}`;
-                            } catch (e) {}
-
-                            return data;
-                        },
-                    ],
+                    beforeChange: [async (data) => await getIncomeTitle(data)],
                 },
+            },
+        },
+        sidebar: {
+            slug: {
+                admin: {
+                    readOnly: true,
+                },
+                beforeChange: async (data) => await getIncomeTitle(data),
             },
         },
         tabs: [
@@ -131,11 +141,15 @@ export const Incomes: CollectionConfig = {
                     },
                     {
                         type: 'relationship',
-                        name: 'related',
+                        name: 'event',
                         relationTo: 'events',
                         admin: {
                             condition: (data, siblingData) => siblingData?.incomeType === 'event',
                         },
+                    },
+                    {
+                        type: 'text',
+                        name: 'incomeDetail',
                     },
                     {
                         type: 'number',

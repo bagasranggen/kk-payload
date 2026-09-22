@@ -7,32 +7,10 @@ export const Events: CollectionConfig = {
         // group: 'Taxonomies',
         useAsTitle: 'eventTitle',
     },
-    // hooks: {
-    //     beforeChange: [
-    //         async ({ data, req: { payload } }) => {
-    //             console.log({ incomes: data?.incomes?.docs });
-    //
-    //             // try {
-    //             //     const incomes = await payload.find({
-    //             //         collection: 'incomes',
-    //             //         select: { income: true },
-    //             //         where: {
-    //             //             id: { in: data?.incomes?.docs },
-    //             //         },
-    //             //     });
-    //             //
-    //             //     console.log({ awaitIncomes: incomes?.docs });
-    //             // } catch (e) {
-    //             //     console.log(e);
-    //             // }
-    //         },
-    //     ],
-    // },
     fields: BaseEntry({
         typeHandle: [{ value: 'sectionEvent', label: 'Event' }],
         url: { enabled: false },
         sidebar: {
-            updateAt: { enabled: true },
             fields: [
                 {
                     type: 'text',
@@ -101,12 +79,11 @@ export const Events: CollectionConfig = {
                         readOnly: true,
                     },
                     hooks: {
-                        afterChange: [
+                        beforeChange: [
                             async ({ siblingData, req: { payload, context } }) => {
-                                // let data = 0;
-                                //
-                                console.log('run');
-                                console.log({ siblingData, context });
+                                if (context.triggeringRelatedUpdate) return;
+
+                                let data = 0;
 
                                 try {
                                     const incomes = await payload.find({
@@ -122,14 +99,65 @@ export const Events: CollectionConfig = {
                                         0
                                     );
 
-                                    // console.log({ totalIncome });
-
-                                    // if (totalIncome > 0) data = totalIncome;
-                                    console.log({ totalIncome, awaitIncomes: incomes?.docs });
-
-                                    // console.log({ awaitIncomes: incomes?.docs });
+                                    if (totalIncome > 0) data = totalIncome;
                                 } catch {}
-                                // return data;
+
+                                return data;
+                            },
+                        ],
+                    },
+                },
+                {
+                    type: 'number',
+                    name: 'totalExpense',
+                    admin: {
+                        readOnly: true,
+                    },
+                    hooks: {
+                        beforeChange: [
+                            async ({ siblingData, req: { payload, context } }) => {
+                                if (context.triggeringRelatedUpdate) return;
+
+                                let data = 0;
+
+                                try {
+                                    const expenses = await payload.find({
+                                        collection: 'expenses',
+                                        select: { expense: true },
+                                        where: {
+                                            id: { in: siblingData?.expenses?.docs },
+                                        },
+                                    });
+
+                                    const totalIncome = expenses?.docs.reduce(
+                                        (accumulator, currentValue) => accumulator + (currentValue?.expense ?? 0),
+                                        0
+                                    );
+
+                                    if (totalIncome > 0) data = totalIncome;
+                                } catch {}
+
+                                return data;
+                            },
+                        ],
+                    },
+                },
+                {
+                    type: 'number',
+                    name: 'profit',
+                    admin: {
+                        readOnly: true,
+                    },
+                    hooks: {
+                        beforeChange: [
+                            ({ siblingData }) => {
+                                let data = 0;
+
+                                if (siblingData?.totalIncome && siblingData?.totalExpense) {
+                                    data = siblingData.totalIncome - siblingData.totalExpense;
+                                }
+
+                                return data;
                             },
                         ],
                     },
@@ -207,7 +235,7 @@ export const Events: CollectionConfig = {
                         name: 'incomes',
                         label: false,
                         collection: 'incomes',
-                        on: 'related',
+                        on: 'event',
                         admin: {
                             defaultColumns: ['incomeType', 'title', 'income'],
                         },
@@ -226,15 +254,6 @@ export const Events: CollectionConfig = {
                         admin: {
                             defaultColumns: ['expenseType', 'title', 'expense'],
                         },
-                        // hooks: {
-                        //     beforeChange: [
-                        //         ({ siblingData }) => {
-                        //             console.log('run join');
-                        //
-                        //             siblingData.totalIncome = 5;
-                        //         },
-                        //     ],
-                        // },
                     },
                 ],
             },

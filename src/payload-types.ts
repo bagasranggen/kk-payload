@@ -180,7 +180,6 @@ export interface Media {
  */
 export interface Event {
   id: number;
-  updatedAt: string;
   typeHandle: 'sectionEvent';
   slug: string;
   entryStatus: 'disabled' | 'live';
@@ -188,6 +187,8 @@ export interface Event {
   eventConfirmation: 'tbc' | 'confirmed';
   eventType?: ('internal' | 'publicFree' | 'publicTicketing') | null;
   totalIncome?: number | null;
+  totalExpense?: number | null;
+  profit?: number | null;
   title: string;
   date?: string | null;
   time?: string | null;
@@ -201,6 +202,7 @@ export interface Event {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
+  updatedAt: string;
   createdAt: string;
 }
 /**
@@ -215,7 +217,8 @@ export interface Income {
   title: string;
   date?: string | null;
   incomeType?: ('event' | 'merchandise') | null;
-  related?: (number | null) | Event;
+  event?: (number | null) | Event;
+  incomeDetail?: string | null;
   income?: number | null;
   updatedAt: string;
   createdAt: string;
@@ -388,7 +391,6 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "events_select".
  */
 export interface EventsSelect<T extends boolean = true> {
-  updatedAt?: T;
   typeHandle?: T;
   slug?: T;
   entryStatus?: T;
@@ -396,11 +398,14 @@ export interface EventsSelect<T extends boolean = true> {
   eventConfirmation?: T;
   eventType?: T;
   totalIncome?: T;
+  totalExpense?: T;
+  profit?: T;
   title?: T;
   date?: T;
   time?: T;
   incomes?: T;
   expenses?: T;
+  updatedAt?: T;
   createdAt?: T;
 }
 /**
@@ -433,7 +438,8 @@ export interface IncomesSelect<T extends boolean = true> {
   title?: T;
   date?: T;
   incomeType?: T;
-  related?: T;
+  event?: T;
+  incomeDetail?: T;
   income?: T;
   updatedAt?: T;
   createdAt?: T;
