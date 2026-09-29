@@ -1,0 +1,9 @@
+.field-type--profit {
+    input {
+        color: #7bf1a8;
+
+        &[value^="-"] {
+            color: #ffa2a2;
+        }
+    }
+}

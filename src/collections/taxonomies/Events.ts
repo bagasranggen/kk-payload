@@ -1,11 +1,17 @@
+import React from 'react';
+
 import { CollectionConfig } from 'payload';
+
+import { CASH_FLOW_DEFICIT_COLOR, CASH_FLOW_DISPLAY_FORMAT, CASH_FLOW_SURPLUS_COLOR } from '@/libs/constansts';
+import { convertIntToCurrency } from '@/libs/utils';
+
 import { BaseEntry } from '@/shared';
 
 export const Events: CollectionConfig = {
     slug: 'events',
     admin: {
-        // group: 'Taxonomies',
         useAsTitle: 'eventTitle',
+        defaultColumns: ['eventTitle', 'entryStatus', 'date', 'eventType', 'eventConfirmation'],
     },
     fields: BaseEntry({
         typeHandle: [{ value: 'sectionEvent', label: 'Event' }],
@@ -15,6 +21,7 @@ export const Events: CollectionConfig = {
                 {
                     type: 'text',
                     name: 'eventTitle',
+                    label: 'Title',
                     admin: {
                         hidden: true,
                         readOnly: true,
@@ -75,8 +82,12 @@ export const Events: CollectionConfig = {
                 {
                     type: 'number',
                     name: 'totalIncome',
+                    hidden: true,
                     admin: {
                         readOnly: true,
+                        style: {
+                            '--theme-elevation-400': CASH_FLOW_SURPLUS_COLOR,
+                        } as React.CSSProperties,
                     },
                     hooks: {
                         beforeChange: [
@@ -108,10 +119,31 @@ export const Events: CollectionConfig = {
                     },
                 },
                 {
+                    type: 'text',
+                    name: 'totalIncomeCurrency',
+                    admin: {
+                        readOnly: true,
+                        style: {
+                            '--theme-elevation-400': CASH_FLOW_SURPLUS_COLOR,
+                        } as React.CSSProperties,
+                    },
+                    hooks: {
+                        beforeChange: [
+                            ({ siblingData }) => {
+                                return convertIntToCurrency(siblingData?.totalIncome);
+                            },
+                        ],
+                    },
+                },
+                {
                     type: 'number',
                     name: 'totalExpense',
                     admin: {
                         readOnly: true,
+                        hidden: true,
+                        style: {
+                            '--theme-elevation-400': CASH_FLOW_DEFICIT_COLOR,
+                        } as React.CSSProperties,
                     },
                     hooks: {
                         beforeChange: [
@@ -143,10 +175,29 @@ export const Events: CollectionConfig = {
                     },
                 },
                 {
+                    type: 'text',
+                    name: 'totalExpenseCurrency',
+                    admin: {
+                        readOnly: true,
+                        style: {
+                            '--theme-elevation-400': CASH_FLOW_DEFICIT_COLOR,
+                        } as React.CSSProperties,
+                    },
+                    hooks: {
+                        beforeChange: [
+                            ({ siblingData }) => {
+                                return convertIntToCurrency(siblingData?.totalExpense);
+                            },
+                        ],
+                    },
+                },
+                {
                     type: 'number',
                     name: 'profit',
                     admin: {
                         readOnly: true,
+                        hidden: true,
+                        className: 'field-type--profit',
                     },
                     hooks: {
                         beforeChange: [
@@ -158,6 +209,26 @@ export const Events: CollectionConfig = {
                                 }
 
                                 return data;
+                            },
+                        ],
+                    },
+                },
+                {
+                    type: 'text',
+                    name: 'profitCurrency',
+                    admin: {
+                        readOnly: true,
+                        className: 'field-type--profit',
+                    },
+                    hooks: {
+                        afterRead: [
+                            ({ siblingData }) => {
+                                return convertIntToCurrency(siblingData?.profit);
+                            },
+                        ],
+                        beforeChange: [
+                            ({ siblingData }) => {
+                                return convertIntToCurrency(siblingData?.profit);
                             },
                         ],
                     },
@@ -206,9 +277,10 @@ export const Events: CollectionConfig = {
                                 name: 'date',
                                 label: 'Event Date',
                                 admin: {
-                                    width: '25%',
+                                    width: '30%',
                                     date: {
                                         pickerAppearance: 'dayOnly',
+                                        displayFormat: CASH_FLOW_DISPLAY_FORMAT,
                                     },
                                 },
                             },
@@ -217,13 +289,25 @@ export const Events: CollectionConfig = {
                                 name: 'time',
                                 label: 'Event Time',
                                 admin: {
-                                    width: '25%',
+                                    width: '30%',
                                     date: {
                                         pickerAppearance: 'timeOnly',
                                     },
                                 },
                             },
                         ],
+                    },
+                    {
+                        type: 'textarea',
+                        name: 'address',
+                    },
+                    {
+                        type: 'text',
+                        name: 'addressUrl',
+                    },
+                    {
+                        type: 'text',
+                        name: 'eventUrl',
                     },
                 ],
             },
@@ -236,8 +320,9 @@ export const Events: CollectionConfig = {
                         label: false,
                         collection: 'incomes',
                         on: 'event',
+                        orderable: true,
                         admin: {
-                            defaultColumns: ['incomeType', 'title', 'income'],
+                            defaultColumns: ['incomeType', 'date', 'title', 'incomeCurrency'],
                         },
                     },
                 ],
@@ -251,8 +336,9 @@ export const Events: CollectionConfig = {
                         label: false,
                         collection: 'expenses',
                         on: 'event',
+                        orderable: true,
                         admin: {
-                            defaultColumns: ['expenseType', 'title', 'expense'],
+                            defaultColumns: ['expenseType', 'date', 'title', 'expenseCurrency'],
                         },
                     },
                 ],

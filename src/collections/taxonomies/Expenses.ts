@@ -1,7 +1,9 @@
 import { CollectionConfig, FieldHook, Option } from 'payload';
 
+import { CASH_FLOW_DISPLAY_FORMAT } from '@/libs/constansts';
 import { ArrayStringProps, ParametersProps } from '@/libs/types';
-import { joinArrayString } from '@/libs/utils';
+import { convertIntToCurrency, joinArrayString } from '@/libs/utils';
+import { getUpdateCashFlow } from '@/libs/factory';
 
 import { BaseEntry } from '@/shared';
 
@@ -27,7 +29,18 @@ export const CREW_ROLES_OPTIONS: Exclude<Option, string>[] = [
     },
 ];
 
-const getExpenseTitle = async ({ siblingData, req: { payload } }: ParametersProps<FieldHook>) => {
+export type GetExpenseTitleProps = {
+    isSlug?: boolean;
+    data: ParametersProps<FieldHook>;
+};
+
+const getExpenseTitle = async ({
+    isSlug,
+    data: {
+        siblingData,
+        req: { payload },
+    },
+}: GetExpenseTitleProps) => {
     let data: ArrayStringProps = [];
 
     const expenseType = EXPENSE_TYPE_OPTIONS.find((item) => item?.value === siblingData?.expenseType);
@@ -49,7 +62,7 @@ const getExpenseTitle = async ({ siblingData, req: { payload } }: ParametersProp
         if (siblingData?.customExpense) data.push(siblingData?.customExpense);
     }
 
-    if (siblingData?.date) {
+    if (isSlug && siblingData?.date) {
         const formatter = new Intl.DateTimeFormat('en-GB', {
             day: '2-digit',
             month: '2-digit',
@@ -67,40 +80,12 @@ export const Expenses: CollectionConfig = {
     admin: {
         group: 'Cash Flow',
         useAsTitle: 'title',
+        defaultColumns: ['title', 'entryStatus', 'expenseType', 'event', 'expenseCurrency'],
     },
     hooks: {
         afterChange: [
             async ({ data, req }) => {
-                req.context.triggeringRelatedUpdate = true;
-
-                if (data?.event) {
-                    try {
-                        const totalExpense = await req.payload.find({
-                            collection: 'expenses',
-                            select: { expense: true },
-                            where: {
-                                slug: { not_equals: data?.slug },
-                                related: { equals: data?.event },
-                            },
-                        });
-
-                        const updateExpense = totalExpense?.docs.reduce(
-                            (accumulator, currentValue) => accumulator + (currentValue?.expense ?? 0),
-                            data?.expense ?? 0
-                        );
-
-                        await req.payload.update({
-                            collection: 'events',
-                            id: data?.event,
-                            data: {
-                                totalExpense: updateExpense,
-                            },
-                            req, // CRITICAL: Keeps the operation inside the same database transaction
-                        });
-                    } catch {}
-                }
-
-                return data;
+                await getUpdateCashFlow({ type: 'expense', data, req });
             },
         ],
     },
@@ -109,26 +94,16 @@ export const Expenses: CollectionConfig = {
         url: { enabled: false },
         general: {
             title: {
-                admin: {
-                    readOnly: true,
-                },
+                admin: { readOnly: true },
                 hooks: {
-                    beforeChange: [
-                        async (data) => {
-                            return await getExpenseTitle(data);
-                        },
-                    ],
+                    beforeChange: [async (data) => await getExpenseTitle({ data })],
                 },
             },
         },
         sidebar: {
             slug: {
-                admin: {
-                    readOnly: true,
-                },
-                beforeChange: async (data) => {
-                    return await getExpenseTitle(data);
-                },
+                admin: { readOnly: true },
+                beforeChange: async (data) => await getExpenseTitle({ isSlug: true, data }),
             },
         },
         tabs: [
@@ -144,6 +119,9 @@ export const Expenses: CollectionConfig = {
                                 defaultValue: new Date(),
                                 admin: {
                                     width: '35%',
+                                    date: {
+                                        displayFormat: CASH_FLOW_DISPLAY_FORMAT,
+                                    },
                                 },
                             },
                         ],
@@ -193,8 +171,32 @@ export const Expenses: CollectionConfig = {
                         },
                     },
                     {
-                        type: 'number',
-                        name: 'expense',
+                        type: 'row',
+                        fields: [
+                            {
+                                type: 'number',
+                                name: 'expense',
+                                admin: {
+                                    width: '50%',
+                                },
+                            },
+                            {
+                                type: 'text',
+                                name: 'expenseCurrency',
+                                label: 'Expense',
+                                admin: {
+                                    readOnly: true,
+                                    width: '50%',
+                                },
+                                hooks: {
+                                    beforeChange: [
+                                        ({ siblingData }) => {
+                                            return convertIntToCurrency(siblingData?.expense);
+                                        },
+                                    ],
+                                },
+                            },
+                        ],
                     },
                 ],
             },

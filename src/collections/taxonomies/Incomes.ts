@@ -1,7 +1,11 @@
 import { CollectionConfig, FieldHook, Option } from 'payload';
-import { BaseEntry } from '@/shared';
+
+import { CASH_FLOW_DISPLAY_FORMAT } from '@/libs/constansts';
 import { ArrayStringProps, ParametersProps } from '@/libs/types';
-import { joinArrayString } from '@/libs/utils';
+import { convertIntToCurrency, joinArrayString } from '@/libs/utils';
+import { getUpdateCashFlow } from '@/libs/factory';
+
+import { BaseEntry } from '@/shared';
 
 export const INCOME_TYPE_OPTIONS: Exclude<Option, string>[] = [
     {
@@ -14,14 +18,19 @@ export const INCOME_TYPE_OPTIONS: Exclude<Option, string>[] = [
     },
 ];
 
-export const getIncomeTitle = async ({ siblingData, req: { payload } }: ParametersProps<FieldHook>) => {
+export type GetIncomeTitleProps = {
+    isSlug?: boolean;
+    data: ParametersProps<FieldHook>;
+};
+
+export const getIncomeTitle = async ({
+    isSlug,
+    data: {
+        siblingData,
+        req: { payload },
+    },
+}: GetIncomeTitleProps) => {
     let data: ArrayStringProps = [];
-
-    if (siblingData?.incomeType) {
-        const tmp = INCOME_TYPE_OPTIONS?.find((item) => item.value === siblingData.incomeType);
-
-        if (tmp?.label && typeof tmp.label === 'string') data.push(tmp.label);
-    }
 
     if (siblingData?.incomeDetail) data.push(siblingData.incomeDetail);
 
@@ -33,12 +42,10 @@ export const getIncomeTitle = async ({ siblingData, req: { payload } }: Paramete
             });
 
             if (event?.eventTitle) data.push(event.eventTitle);
-        } catch (e) {
-            console.log(e);
-        }
+        } catch (e) {}
     }
 
-    if (siblingData?.date) {
+    if (isSlug && siblingData?.date) {
         const formatter = new Intl.DateTimeFormat('en-GB', {
             day: '2-digit',
             month: '2-digit',
@@ -56,64 +63,30 @@ export const Incomes: CollectionConfig = {
     admin: {
         group: 'Cash Flow',
         useAsTitle: 'title',
+        defaultColumns: ['title', 'entryStatus', 'incomeType', 'event', 'incomeCurrency'],
     },
     hooks: {
         afterChange: [
             async ({ data, req }) => {
-                req.context.triggeringRelatedUpdate = true;
-
-                if (data?.event) {
-                    try {
-                        const totalIncome = await req.payload.find({
-                            collection: 'incomes',
-                            select: { income: true },
-                            where: {
-                                slug: { not_equals: data?.slug },
-                                related: { equals: data?.event },
-                            },
-                        });
-
-                        const updateIncome = totalIncome?.docs.reduce(
-                            (accumulator, currentValue) => accumulator + (currentValue?.income ?? 0),
-                            data?.income ?? 0
-                        );
-
-                        await req.payload.update({
-                            collection: 'events',
-                            id: data?.event,
-                            data: {
-                                totalIncome: updateIncome,
-                            },
-                            req, // CRITICAL: Keeps the operation inside the same database transaction
-                        });
-                    } catch {}
-                }
-
-                return data;
+                await getUpdateCashFlow({ type: 'income', data, req });
             },
         ],
     },
     fields: BaseEntry({
         typeHandle: [{ value: 'sectionIncome', label: 'Income' }],
-        url: {
-            enabled: false,
-        },
+        url: { enabled: false },
         general: {
             title: {
-                admin: {
-                    readOnly: true,
-                },
+                admin: { readOnly: true },
                 hooks: {
-                    beforeChange: [async (data) => await getIncomeTitle(data)],
+                    beforeChange: [async (data) => await getIncomeTitle({ data })],
                 },
             },
         },
         sidebar: {
             slug: {
-                admin: {
-                    readOnly: true,
-                },
-                beforeChange: async (data) => await getIncomeTitle(data),
+                admin: { readOnly: true },
+                beforeChange: async (data) => await getIncomeTitle({ isSlug: true, data }),
             },
         },
         tabs: [
@@ -129,6 +102,9 @@ export const Incomes: CollectionConfig = {
                                 defaultValue: new Date(),
                                 admin: {
                                     width: '35%',
+                                    date: {
+                                        displayFormat: CASH_FLOW_DISPLAY_FORMAT,
+                                    },
                                 },
                             },
                         ],
@@ -152,8 +128,32 @@ export const Incomes: CollectionConfig = {
                         name: 'incomeDetail',
                     },
                     {
-                        type: 'number',
-                        name: 'income',
+                        type: 'row',
+                        fields: [
+                            {
+                                type: 'number',
+                                name: 'income',
+                                admin: {
+                                    width: '50%',
+                                },
+                            },
+                            {
+                                type: 'text',
+                                name: 'incomeCurrency',
+                                label: 'Income',
+                                admin: {
+                                    readOnly: true,
+                                    width: '50%',
+                                },
+                                hooks: {
+                                    beforeChange: [
+                                        ({ siblingData }) => {
+                                            return convertIntToCurrency(siblingData?.income);
+                                        },
+                                    ],
+                                },
+                            },
+                        ],
                     },
                 ],
             },
