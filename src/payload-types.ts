@@ -187,11 +187,17 @@ export interface Event {
   eventConfirmation: 'tbc' | 'confirmed';
   eventType?: ('internal' | 'publicFree' | 'publicTicketing') | null;
   totalIncome?: number | null;
+  totalIncomeCurrency?: string | null;
   totalExpense?: number | null;
+  totalExpenseCurrency?: string | null;
   profit?: number | null;
+  profitCurrency?: string | null;
   title: string;
   date?: string | null;
   time?: string | null;
+  address?: string | null;
+  addressUrl?: string | null;
+  eventUrl?: string | null;
   incomes?: {
     docs?: (number | Income)[];
     hasNextPage?: boolean;
@@ -211,6 +217,7 @@ export interface Event {
  */
 export interface Income {
   id: number;
+  _incomes_incomes_order?: string | null;
   typeHandle: 'sectionIncome';
   slug: string;
   entryStatus: 'disabled' | 'live';
@@ -220,6 +227,7 @@ export interface Income {
   event?: (number | null) | Event;
   incomeDetail?: string | null;
   income?: number | null;
+  incomeCurrency?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -229,6 +237,7 @@ export interface Income {
  */
 export interface Expense {
   id: number;
+  _expenses_expenses_order?: string | null;
   typeHandle: 'sectionExpense';
   slug: string;
   entryStatus: 'disabled' | 'live';
@@ -240,6 +249,7 @@ export interface Expense {
   crewRole?: ('soundEngineer' | 'documentation') | null;
   customExpense?: string | null;
   expense?: number | null;
+  expenseCurrency?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -398,11 +408,17 @@ export interface EventsSelect<T extends boolean = true> {
   eventConfirmation?: T;
   eventType?: T;
   totalIncome?: T;
+  totalIncomeCurrency?: T;
   totalExpense?: T;
+  totalExpenseCurrency?: T;
   profit?: T;
+  profitCurrency?: T;
   title?: T;
   date?: T;
   time?: T;
+  address?: T;
+  addressUrl?: T;
+  eventUrl?: T;
   incomes?: T;
   expenses?: T;
   updatedAt?: T;
@@ -413,6 +429,7 @@ export interface EventsSelect<T extends boolean = true> {
  * via the `definition` "expenses_select".
  */
 export interface ExpensesSelect<T extends boolean = true> {
+  _expenses_expenses_order?: T;
   typeHandle?: T;
   slug?: T;
   entryStatus?: T;
@@ -424,6 +441,7 @@ export interface ExpensesSelect<T extends boolean = true> {
   crewRole?: T;
   customExpense?: T;
   expense?: T;
+  expenseCurrency?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -432,6 +450,7 @@ export interface ExpensesSelect<T extends boolean = true> {
  * via the `definition` "incomes_select".
  */
 export interface IncomesSelect<T extends boolean = true> {
+  _incomes_incomes_order?: T;
   typeHandle?: T;
   slug?: T;
   entryStatus?: T;
@@ -441,6 +460,7 @@ export interface IncomesSelect<T extends boolean = true> {
   event?: T;
   incomeDetail?: T;
   income?: T;
+  incomeCurrency?: T;
   updatedAt?: T;
   createdAt?: T;
 }
