@@ -203,6 +203,9 @@ export const MerchandiseVariants: CollectionConfig = {
                         name: 'order',
                         collection: 'incomes',
                         on: 'merchandise',
+                        admin: {
+                            defaultColumns: ['date', 'title', 'incomeQty', 'incomeCurrency'],
+                        },
                     },
                 ],
             },
