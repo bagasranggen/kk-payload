@@ -78,6 +78,47 @@ export const Incomes: CollectionConfig = {
     },
     hooks: {
         afterChange: [
+            async ({ operation, data, previousDoc, req: { payload } }) => {
+                console.log({ operation, data });
+
+                if (operation === 'update') {
+                    const action = previousDoc?.incomeQty < data?.incomeQty ? 'decrement' : 'increment';
+                    const diff = Math.abs(previousDoc?.incomeQty - data?.incomeQty);
+
+                    console.log({ diff, action });
+
+                    if (diff > 0 && data?.merchandise) {
+                        const id = data.merchandise;
+
+                        const relatedMerch = await payload.findByID({
+                            collection: 'merchandiseVariants',
+                            id,
+                        });
+
+                        const stock = relatedMerch?.stock ?? 0;
+                        let updatedData = {};
+
+                        if (action === 'decrement') {
+                            updatedData = Object.assign(updatedData, {
+                                stock: stock - diff,
+                            });
+                        }
+
+                        if (action === 'increment') {
+                            updatedData = Object.assign(updatedData, {
+                                stock: stock + diff,
+                            });
+                        }
+
+                        await payload.update({
+                            collection: 'merchandiseVariants',
+                            id,
+                            data: updatedData,
+                            // req, // CRITICAL: Keeps the operation inside the same database transaction
+                        });
+                    }
+                }
+            },
             async ({ data, req }) => {
                 await getUpdateCashFlow({ type: 'income', data, req });
             },
