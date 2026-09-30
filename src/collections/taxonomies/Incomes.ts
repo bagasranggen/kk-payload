@@ -45,6 +45,17 @@ export const getIncomeTitle = async ({
         } catch (e) {}
     }
 
+    if (siblingData?.incomeType === 'merchandise' && siblingData?.merchandise) {
+        try {
+            const merchandise = await payload.findByID({
+                collection: 'merchandiseVariants',
+                id: siblingData?.merchandise,
+            });
+
+            if (merchandise?.title) data.push(merchandise.title);
+        } catch (e) {}
+    }
+
     if (isSlug && siblingData?.date) {
         const formatter = new Intl.DateTimeFormat('en-GB', {
             day: '2-digit',
@@ -63,7 +74,7 @@ export const Incomes: CollectionConfig = {
     admin: {
         group: 'Cash Flow',
         useAsTitle: 'title',
-        defaultColumns: ['title', 'entryStatus', 'incomeType', 'event', 'incomeCurrency'],
+        defaultColumns: ['title', 'entryStatus', 'incomeType', 'date', 'event', 'incomeCurrency'],
     },
     hooks: {
         afterChange: [
@@ -126,6 +137,33 @@ export const Incomes: CollectionConfig = {
                     {
                         type: 'text',
                         name: 'incomeDetail',
+                        admin: {
+                            condition: (data, siblingData) => siblingData?.incomeType !== 'merchandise',
+                        },
+                    },
+                    {
+                        type: 'row',
+                        fields: [
+                            {
+                                type: 'relationship',
+                                name: 'merchandise',
+                                relationTo: 'merchandiseVariants',
+                                admin: {
+                                    width: '90%',
+                                    condition: (data, siblingData) => siblingData?.incomeType === 'merchandise',
+                                },
+                            },
+                            {
+                                type: 'number',
+                                name: 'incomeQty',
+                                label: 'Quantity',
+                                defaultValue: 1,
+                                admin: {
+                                    width: '10%',
+                                    condition: (data, siblingData) => siblingData?.incomeType === 'merchandise',
+                                },
+                            },
+                        ],
                     },
                     {
                         type: 'row',
@@ -135,6 +173,29 @@ export const Incomes: CollectionConfig = {
                                 name: 'income',
                                 admin: {
                                     width: '50%',
+                                },
+                                access: {
+                                    update: ({ data }) => data?.incomeType !== 'merchandise',
+                                },
+                                hooks: {
+                                    beforeChange: [
+                                        async ({ siblingData, req: { payload } }) => {
+                                            if (siblingData?.incomeType === 'merchandise' && siblingData?.merchandise) {
+                                                let data = 0;
+
+                                                const merchandise = await payload.findByID({
+                                                    collection: 'merchandiseVariants',
+                                                    id: siblingData.merchandise,
+                                                });
+
+                                                if (merchandise?.price) data = merchandise.price;
+
+                                                if (siblingData?.incomeQty) data = data * siblingData.incomeQty;
+
+                                                return data;
+                                            }
+                                        },
+                                    ],
                                 },
                             },
                             {
@@ -147,7 +208,21 @@ export const Incomes: CollectionConfig = {
                                 },
                                 hooks: {
                                     beforeChange: [
-                                        ({ siblingData }) => {
+                                        async ({ siblingData, req: { payload } }) => {
+                                            if (siblingData?.incomeType === 'merchandise' && siblingData?.merchandise) {
+                                                let data = 0;
+
+                                                const merchandise = await payload.findByID({
+                                                    collection: 'merchandiseVariants',
+                                                    id: siblingData.merchandise,
+                                                });
+
+                                                if (merchandise?.price) data = merchandise.price;
+
+                                                if (siblingData?.incomeQty) data = data * siblingData.incomeQty;
+
+                                                return convertIntToCurrency(data);
+                                            }
                                             return convertIntToCurrency(siblingData?.income);
                                         },
                                     ],
