@@ -69,10 +69,14 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    colors: Color;
     events: Event;
     expenses: Expense;
     incomes: Income;
     people: Person;
+    sizes: Size;
+    merchandises: Merchandise;
+    merchandiseVariants: MerchandiseVariant;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -83,14 +87,24 @@ export interface Config {
       incomes: 'incomes';
       expenses: 'expenses';
     };
+    merchandises: {
+      variants: 'merchandiseVariants';
+    };
+    merchandiseVariants: {
+      order: 'incomes';
+    };
   };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    colors: ColorsSelect<false> | ColorsSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     expenses: ExpensesSelect<false> | ExpensesSelect<true>;
     incomes: IncomesSelect<false> | IncomesSelect<true>;
     people: PeopleSelect<false> | PeopleSelect<true>;
+    sizes: SizesSelect<false> | SizesSelect<true>;
+    merchandises: MerchandisesSelect<false> | MerchandisesSelect<true>;
+    merchandiseVariants: MerchandiseVariantsSelect<false> | MerchandiseVariantsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -176,6 +190,18 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "colors".
+ */
+export interface Color {
+  id: number;
+  slug: string;
+  entryStatus: 'disabled' | 'live';
+  title: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "events".
  */
 export interface Event {
@@ -226,8 +252,69 @@ export interface Income {
   incomeType?: ('event' | 'merchandise') | null;
   event?: (number | null) | Event;
   incomeDetail?: string | null;
+  merchandise?: (number | null) | MerchandiseVariant;
+  incomeQty?: number | null;
   income?: number | null;
   incomeCurrency?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "merchandiseVariants".
+ */
+export interface MerchandiseVariant {
+  id: number;
+  _merchandiseVariants_variants_order?: string | null;
+  typeHandle: 'sectionMerchandiseVariant';
+  slug: string;
+  entryStatus: 'disabled' | 'live';
+  stock?: number | null;
+  title: string;
+  merchandise?: (number | null) | Merchandise;
+  price?: number | null;
+  priceCurrency?: string | null;
+  size?: (number | null) | Size;
+  color?: (number | null) | Color;
+  order?: {
+    docs?: (number | Income)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "merchandises".
+ */
+export interface Merchandise {
+  id: number;
+  typeHandle: 'sectionMerchandise';
+  slug: string;
+  entryStatus: 'disabled' | 'live';
+  title: string;
+  url?: string | null;
+  uri?: string | null;
+  price?: number | null;
+  priceCurrency?: string | null;
+  variants?: {
+    docs?: (number | MerchandiseVariant)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sizes".
+ */
+export interface Size {
+  id: number;
+  slug: string;
+  entryStatus: 'disabled' | 'live';
+  title: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -299,6 +386,10 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
+        relationTo: 'colors';
+        value: number | Color;
+      } | null)
+    | ({
         relationTo: 'events';
         value: number | Event;
       } | null)
@@ -313,6 +404,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'people';
         value: number | Person;
+      } | null)
+    | ({
+        relationTo: 'sizes';
+        value: number | Size;
+      } | null)
+    | ({
+        relationTo: 'merchandises';
+        value: number | Merchandise;
+      } | null)
+    | ({
+        relationTo: 'merchandiseVariants';
+        value: number | MerchandiseVariant;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -398,6 +501,17 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "colors_select".
+ */
+export interface ColorsSelect<T extends boolean = true> {
+  slug?: T;
+  entryStatus?: T;
+  title?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "events_select".
  */
 export interface EventsSelect<T extends boolean = true> {
@@ -459,6 +573,8 @@ export interface IncomesSelect<T extends boolean = true> {
   incomeType?: T;
   event?: T;
   incomeDetail?: T;
+  merchandise?: T;
+  incomeQty?: T;
   income?: T;
   incomeCurrency?: T;
   updatedAt?: T;
@@ -473,6 +589,54 @@ export interface PeopleSelect<T extends boolean = true> {
   slug?: T;
   entryStatus?: T;
   title?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sizes_select".
+ */
+export interface SizesSelect<T extends boolean = true> {
+  slug?: T;
+  entryStatus?: T;
+  title?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "merchandises_select".
+ */
+export interface MerchandisesSelect<T extends boolean = true> {
+  typeHandle?: T;
+  slug?: T;
+  entryStatus?: T;
+  title?: T;
+  url?: T;
+  uri?: T;
+  price?: T;
+  priceCurrency?: T;
+  variants?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "merchandiseVariants_select".
+ */
+export interface MerchandiseVariantsSelect<T extends boolean = true> {
+  _merchandiseVariants_variants_order?: T;
+  typeHandle?: T;
+  slug?: T;
+  entryStatus?: T;
+  stock?: T;
+  title?: T;
+  merchandise?: T;
+  price?: T;
+  priceCurrency?: T;
+  size?: T;
+  color?: T;
+  order?: T;
   updatedAt?: T;
   createdAt?: T;
 }
