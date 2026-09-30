@@ -5,9 +5,10 @@ import { buildConfig } from 'payload';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 
-import { Events, Expenses, Incomes, People } from '@/collections/taxonomies';
+import { Colors, Events, Expenses, Incomes, MerchandiseVariants, People, Sizes } from '@/collections/taxonomies';
 import { Users } from './collections/users';
 import { Media } from './collections/Media';
+import { Merchandises } from '@/collections/pages';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -19,7 +20,7 @@ export default buildConfig({
             baseDir: path.resolve(dirname),
         },
     },
-    collections: [Users, Media, Events, Expenses, Incomes, People],
+    collections: [Users, Media, Colors, Events, Expenses, Incomes, People, Sizes, Merchandises, MerchandiseVariants],
     editor: lexicalEditor(),
     secret: process.env.PAYLOAD_SECRET || '',
     typescript: {
