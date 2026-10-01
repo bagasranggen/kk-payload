@@ -5,7 +5,12 @@ import { convertIntToCurrency, sortByLatestDate } from '@/libs/utils';
 import type { ClientField, Column, Payload } from 'payload';
 import { Income, Merchandise } from '@/payload-types';
 
-import { Table } from '@payloadcms/ui';
+import { Link, Table } from '@payloadcms/ui';
+
+export type RowsItemProps = {
+    formattedDate: Income['date'];
+    qty: Income['incomeQty'];
+} & (Pick<Merchandise, 'id' | 'title' | 'priceCurrency'> & Pick<Income, 'date' | 'income' | 'incomeCurrency'>);
 
 export type JoinOrderFieldProps = {
     data: Merchandise;
@@ -13,10 +18,7 @@ export type JoinOrderFieldProps = {
 };
 
 export const JoinOrderFields = async ({ payload, data }: JoinOrderFieldProps) => {
-    let rows: ({
-        formattedDate: Income['date'];
-        qty: Income['incomeQty'];
-    } & (Pick<Merchandise, 'id' | 'title'> & Pick<Income, 'date' | 'income' | 'incomeCurrency'>))[] = [];
+    let rows: RowsItemProps[] = [];
 
     const variants = await payload.find({
         collection: 'merchandiseVariants',
@@ -52,6 +54,7 @@ export const JoinOrderFields = async ({ payload, data }: JoinOrderFieldProps) =>
                         formattedDate: date,
                         qty: order.incomeQty,
                         income: order.income,
+                        priceCurrency: item?.priceCurrency,
                         incomeCurrency: order.incomeCurrency,
                     });
                 });
@@ -69,7 +72,15 @@ export const JoinOrderFields = async ({ payload, data }: JoinOrderFieldProps) =>
             active: true,
             field: { name: 'date', type: 'text' } as ClientField,
             Heading: 'Date',
-            renderedCells: rows.map((row) => row.formattedDate),
+            renderedCells: rows.map((row) => {
+                return (
+                    <Link
+                        href={`/admin/collections/incomes/${row.id}`}
+                        target="_blank">
+                        {row.formattedDate}
+                    </Link>
+                );
+            }),
         },
         {
             accessor: 'title',
@@ -84,6 +95,13 @@ export const JoinOrderFields = async ({ payload, data }: JoinOrderFieldProps) =>
             field: { name: 'qty', type: 'text' } as ClientField,
             Heading: 'Qty',
             renderedCells: rows.map((row) => row.qty),
+        },
+        {
+            accessor: 'price',
+            active: true,
+            field: { name: 'price', type: 'text' } as ClientField,
+            Heading: 'Price',
+            renderedCells: rows.map((row) => row.priceCurrency),
         },
         {
             accessor: 'income',

@@ -7,8 +7,6 @@ export type GetUpdateCashFlowProps = {
 } & Pick<ParametersProps<NonNullable<NonNullable<CollectionConfig['hooks']>['afterChange']>[number]>, 'data' | 'req'>;
 
 export const getUpdateCashFlow = async ({ type, data, req }: GetUpdateCashFlowProps) => {
-    req.context.triggeringRelatedUpdate = true;
-
     if (data?.event) {
         let updatedData = {};
         let tmp = 0;
@@ -52,6 +50,8 @@ export const getUpdateCashFlow = async ({ type, data, req }: GetUpdateCashFlowPr
                 totalIncome: tmp,
             });
         }
+
+        req.context.triggeringRelatedUpdate = true;
 
         await req.payload.update({
             collection: 'events',

@@ -1,9 +1,8 @@
-import { CollectionConfig, FieldHook, Option } from 'payload';
+import { CollectionConfig, Option } from 'payload';
 
 import { CASH_FLOW_DISPLAY_FORMAT } from '@/libs/constansts';
-import { ArrayStringProps, ParametersProps } from '@/libs/types';
-import { convertIntToCurrency, joinArrayString } from '@/libs/utils';
-import { getUpdateCashFlow } from '@/libs/factory';
+import { convertIntToCurrency } from '@/libs/utils';
+import { getExpenseTitle, getUpdateCashFlow } from '@/libs/factory';
 
 import { BaseEntry } from '@/shared';
 
@@ -28,52 +27,6 @@ export const CREW_ROLES_OPTIONS: Exclude<Option, string>[] = [
         label: 'Documentation',
     },
 ];
-
-export type GetExpenseTitleProps = {
-    isSlug?: boolean;
-    data: ParametersProps<FieldHook>;
-};
-
-const getExpenseTitle = async ({
-    isSlug,
-    data: {
-        siblingData,
-        req: { payload },
-    },
-}: GetExpenseTitleProps) => {
-    let data: ArrayStringProps = [];
-
-    const expenseType = EXPENSE_TYPE_OPTIONS.find((item) => item?.value === siblingData?.expenseType);
-
-    if (expenseType && expenseType?.label) data.push(expenseType.label as string);
-
-    if (siblingData?.expenseType === 'crew') {
-        try {
-            const crew = await payload.findByID({
-                collection: 'people',
-                id: siblingData?.crew,
-            });
-
-            if (crew?.title) data.push(crew?.title as string);
-        } catch (e) {}
-    }
-
-    if (siblingData?.expenseType === 'etc') {
-        if (siblingData?.customExpense) data.push(siblingData?.customExpense);
-    }
-
-    if (isSlug && siblingData?.date) {
-        const formatter = new Intl.DateTimeFormat('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-        });
-
-        data.push(formatter.format(new Date(siblingData.date)));
-    }
-
-    return joinArrayString(data, ' - ');
-};
 
 export const Expenses: CollectionConfig = {
     slug: 'expenses',

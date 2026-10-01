@@ -1,8 +1,9 @@
 import { CollectionConfig } from 'payload';
 
+import { convertIntToCurrency } from '@/libs/utils';
+
 import { BaseEntry } from '@/shared';
-import { convertIntToCurrency, joinArrayString } from '@/libs/utils';
-import { ArrayStringProps } from '@/libs/types';
+import { getMerchandiseVariantTitle } from '@/libs/factory';
 
 export const MerchandiseVariants: CollectionConfig = {
     slug: 'merchandiseVariants',
@@ -22,38 +23,8 @@ export const MerchandiseVariants: CollectionConfig = {
         sidebar: {
             slug: {
                 admin: { readOnly: true },
-                beforeChange: async ({ siblingData, req: { payload } }) => {
-                    let data: ArrayStringProps = [];
-
-                    if (siblingData?.merchandise) {
-                        const merchandise = await payload.findByID({
-                            collection: 'merchandises',
-                            id: siblingData.merchandise,
-                        });
-
-                        if (merchandise?.title) data.push(merchandise.title);
-                    }
-
-                    if (siblingData?.size) {
-                        const size = await payload.findByID({
-                            collection: 'sizes',
-                            id: siblingData.size,
-                        });
-
-                        if (size?.title) data.push(size.title);
-                    }
-
-                    if (siblingData?.color) {
-                        const color = await payload.findByID({
-                            collection: 'colors',
-                            id: siblingData.color,
-                        });
-
-                        if (color?.title) data.push(color.title);
-                    }
-
-                    return joinArrayString(data, ' - ');
-                },
+                beforeChange: async ({ siblingData, req: { payload } }) =>
+                    await getMerchandiseVariantTitle({ payload, siblingData }),
             },
             fields: [
                 {
@@ -67,38 +38,8 @@ export const MerchandiseVariants: CollectionConfig = {
                 admin: { readOnly: true },
                 hooks: {
                     beforeChange: [
-                        async ({ siblingData, req: { payload } }) => {
-                            let data: ArrayStringProps = [];
-
-                            if (siblingData?.merchandise) {
-                                const merchandise = await payload.findByID({
-                                    collection: 'merchandises',
-                                    id: siblingData.merchandise,
-                                });
-
-                                if (merchandise?.title) data.push(merchandise.title);
-                            }
-
-                            if (siblingData?.size) {
-                                const size = await payload.findByID({
-                                    collection: 'sizes',
-                                    id: siblingData.size,
-                                });
-
-                                if (size?.title) data.push(size.title);
-                            }
-
-                            if (siblingData?.color) {
-                                const color = await payload.findByID({
-                                    collection: 'colors',
-                                    id: siblingData.color,
-                                });
-
-                                if (color?.title) data.push(color.title);
-                            }
-
-                            return joinArrayString(data, ' - ');
-                        },
+                        async ({ siblingData, req: { payload } }) =>
+                            await getMerchandiseVariantTitle({ payload, siblingData }),
                     ],
                 },
             },
