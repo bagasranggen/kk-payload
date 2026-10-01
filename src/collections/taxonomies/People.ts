@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload';
+
 import { BaseEntry } from '@/shared';
 
 export const People: CollectionConfig = {

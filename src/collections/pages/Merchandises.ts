@@ -76,16 +76,6 @@ export const Merchandises: CollectionConfig = {
                             },
                         },
                     },
-                    // {
-                    //     type: 'join',
-                    //     name: 'orders',
-                    //     label: false,
-                    //     collection: 'merchandiseVariants',
-                    //     on: 'order',
-                    //     admin: {
-                    //         defaultColumns: ['title', 'date', 'incomeQty', 'incomeCurrency'],
-                    //     },
-                    // },
                 ],
             },
         ],
